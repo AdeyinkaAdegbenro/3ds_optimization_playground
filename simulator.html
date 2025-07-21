@@ -278,6 +278,12 @@
         const exemptionReasonDiv = document.getElementById('exemptionReason');
         const failureReasonDiv = document.getElementById('failureReason');
 
+        // --- Global Rates for AI Model Persistence ---
+        // These rates will now persist across multiple simulations when AI model is enabled.
+        let currentFrictionlessRate = 0.60;
+        let currentChallengeRate = 0.30;
+        let currentFailureRate = 0.10;
+
         // Event Listener for Simulate Button
         simulateBtn.addEventListener('click', simulate3DS);
 
@@ -292,10 +298,7 @@
             const piiPresent = piiPresenceCheckbox.checked;
             const aiModelEnabled = aiModelToggle.checked;
 
-            // Initialize rates and outcome
-            let frictionlessRate = 0.60; // Base frictionless rate
-            let challengeRate = 0.30;    // Base challenge rate
-            let failureRate = 0.10;      // Base failure rate
+            // Initialize outcome and reason variables for the current run
             let outcome = 'Unknown';
             let exemptionReason = '';
             let failureReason = '';
@@ -373,11 +376,11 @@
                     if (challengeIndicator === 'noChallenge') {
                         outcome = 'Frictionless (No Challenge Requested)';
                     } else { // 'noPreference'
-                        // Simulate a random outcome based on base rates
+                        // Simulate a random outcome based on the current (potentially AI-tuned) rates
                         const random = Math.random();
-                        if (random < frictionlessRate) {
+                        if (random < currentFrictionlessRate) {
                             outcome = 'Frictionless';
-                        } else if (random < frictionlessRate + challengeRate) {
+                        } else if (random < currentFrictionlessRate + currentChallengeRate) {
                             outcome = 'Challenge';
                         } else {
                             outcome = 'Failure';
@@ -390,46 +393,52 @@
             // --- AI Model Impact (Simplified) ---
             if (aiModelEnabled) {
                 // AI model "tunes" parameters to optimize frictionless flow
-                // Example: If frictionless was the outcome, slightly increase its rate.
-                // If it was a challenge, try to push it towards frictionless for similar future transactions.
+                // These changes now persist because currentFrictionlessRate, etc., are global
                 if (outcome.includes('Frictionless')) {
-                    frictionlessRate = Math.min(0.95, frictionlessRate + 0.15); // Increase frictionless
-                    challengeRate = Math.max(0.01, challengeRate - 0.10); // Decrease challenge
-                    failureRate = Math.max(0.01, failureRate - 0.05);     // Decrease failure
+                    currentFrictionlessRate = Math.min(0.95, currentFrictionlessRate + 0.05); // Increase frictionless
+                    currentChallengeRate = Math.max(0.01, currentChallengeRate - 0.03); // Decrease challenge
+                    currentFailureRate = Math.max(0.01, currentFailureRate - 0.02);     // Decrease failure
                     if (!exemptionApplied) { // If AI helped achieve frictionless without explicit exemption
                         exemptionReason = exemptionReason || 'AI Model Optimization: Transaction identified as low risk for frictionless flow.';
                         exemptionReasonDiv.classList.remove('hidden');
                     }
                 } else if (outcome.includes('Challenge')) {
                     // AI tries to reduce future challenges for similar transactions
-                    frictionlessRate = Math.min(0.90, frictionlessRate + 0.05);
-                    challengeRate = Math.max(0.05, challengeRate - 0.05);
+                    currentFrictionlessRate = Math.min(0.90, currentFrictionlessRate + 0.02);
+                    currentChallengeRate = Math.max(0.05, currentChallengeRate - 0.02);
                     exemptionReason = exemptionReason || 'AI Model Optimization: Future transactions of this type may see increased frictionless rates.';
                     exemptionReasonDiv.classList.remove('hidden');
                 } else if (outcome.includes('Failure')) {
                      // AI tries to reduce future failures
-                    failureRate = Math.max(0.01, failureRate - 0.05);
+                    currentFailureRate = Math.max(0.01, currentFailureRate - 0.01);
                     exemptionReason = exemptionReason || 'AI Model Optimization: Future transactions of this type may see reduced failure rates.';
                     exemptionReasonDiv.classList.remove('hidden');
                 }
+            } else {
+                // If AI model is disabled, ensure rates revert to base or remain static
+                // For this simulation, we'll reset them if AI is turned off
+                currentFrictionlessRate = 0.60;
+                currentChallengeRate = 0.30;
+                currentFailureRate = 0.10;
             }
 
+
             // Ensure rates sum to 100% (with some tolerance for floating point)
-            const totalRate = frictionlessRate + challengeRate + failureRate;
+            const totalRate = currentFrictionlessRate + currentChallengeRate + currentFailureRate;
             if (totalRate > 1.001 || totalRate < 0.999) {
                 // Normalize if they drift significantly
                 const factor = 1 / totalRate;
-                frictionlessRate *= factor;
-                challengeRate *= factor;
-                failureRate *= factor;
+                currentFrictionlessRate *= factor;
+                currentChallengeRate *= factor;
+                currentFailureRate *= factor;
             }
 
 
             // Display Results
             outcomeSpan.textContent = outcome;
-            frictionlessRateSpan.textContent = `${(frictionlessRate * 100).toFixed(2)}%`;
-            challengeRateSpan.textContent = `${(challengeRate * 100).toFixed(2)}%`;
-            failureRateSpan.textContent = `${(failureRate * 100).toFixed(2)}%`;
+            frictionlessRateSpan.textContent = `${(currentFrictionlessRate * 100).toFixed(2)}%`;
+            challengeRateSpan.textContent = `${(currentChallengeRate * 100).toFixed(2)}%`;
+            failureRateSpan.textContent = `${(currentFailureRate * 100).toFixed(2)}%`;
 
             if (exemptionReason) {
                 exemptionReasonDiv.innerHTML = `<strong>Exemption/Optimization Info:</strong> ${exemptionReason}`;
