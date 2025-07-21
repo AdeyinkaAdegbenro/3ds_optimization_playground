@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3DS Optimization Playground</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 32px;
+            max-width: 800px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        .input-group label {
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 8px;
+            display: block;
+        }
+        .input-group input[type="number"],
+        .input-group select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+            color: #4b5563;
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .input-group input[type="number"]:focus,
+        .input-group select:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
+            border: 1px solid #d1d5db;
+            accent-color: #4f46e5;
+        }
+        .checkbox-group label {
+            font-weight: 400;
+            color: #374151;
+        }
+        .button-primary {
+            background-color: #4f46e5;
+            color: #ffffff;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            border: none;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2);
+        }
+        .button-primary:hover {
+            background-color: #4338ca;
+            box-shadow: 0 6px 15px rgba(79, 70, 229, 0.3);
+        }
+        .output-section {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 24px;
+        }
+        .output-section h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 16px;
+        }
+        .output-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px dashed #e5e7eb;
+        }
+        .output-item:last-child {
+            border-bottom: none;
+        }
+        .output-item span:first-child {
+            color: #4b5563;
+            font-weight: 500;
+        }
+        .output-item span:last-child {
+            font-weight: 600;
+            color: #1f2937;
+        }
+        .exemption-info {
+            margin-top: 16px;
+            padding: 12px;
+            background-color: #ecfdf5;
+            border: 1px solid #d1fae5;
+            border-radius: 8px;
+            color: #065f46;
+            font-size: 0.9rem;
+        }
+        .failure-info {
+            margin-top: 16px;
+            padding: 12px;
+            background-color: #fee2e2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            color: #991b1b;
+            font-size: 0.9rem;
+        }
+        .ai-toggle-group {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end; /* Align to the right */
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .ai-toggle-group label {
+            font-weight: 500;
+            color: #374151;
+        }
+        /* Custom toggle switch styling */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 28px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            -webkit-transition: .4s;
+            transition: .4s;
+            border-radius: 28px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            -webkit-transition: .4s;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #4f46e5;
+        }
+
+        input:focus + .slider {
+            box-shadow: 0 0 1px #4f46e5;
+        }
+
+        input:checked + .slider:before {
+            -webkit-transform: translateX(20px);
+            -ms-transform: translateX(20px);
+            transform: translateX(20px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-center text-gray-800">3DS Optimization Playground</h1>
+        <p class="text-center text-gray-600">Simulate 3DS flow and exemption impacts.</p>
+
+        <div class="ai-toggle-group">
+            <label for="aiModelToggle">Enable AI Model (Auto-tune parameters)</label>
+            <label class="switch">
+                <input type="checkbox" id="aiModelToggle">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="input-group">
+                <label for="amount">Transaction Amount ($)</label>
+                <input type="number" id="amount" value="100.00" min="0.01" step="0.01">
+            </div>
+            <div class="input-group">
+                <label for="cofStatus">Credential on File (CoF) Status</label>
+                <select id="cofStatus">
+                    <option value="none">Not CoF</option>
+                    <option value="merchantInitiated">Merchant Initiated Transaction (MIT)</option>
+                    <option value="customerInitiated">Customer Initiated Transaction (CIT)</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label for="challengeIndicator">Challenge Indicator</label>
+                <select id="challengeIndicator">
+                    <option value="noPreference">No Preference</option>
+                    <option value="noChallenge">No Challenge Requested</option>
+                    <option value="challengeMandated">Challenge Mandated</option>
+                    <option value="frictionlessMandated">Frictionless Mandated</option>
+                </select>
+            </div>
+            <div class="input-group checkbox-group">
+                <input type="checkbox" id="piiPresence">
+                <label for="piiPresence">PII (Personally Identifiable Information) Present?</label>
+            </div>
+        </div>
+
+        <button id="simulateBtn" class="button-primary">Simulate 3DS Flow</button>
+
+        <div id="outputSection" class="output-section hidden">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Simulation Results</h3>
+            <div class="output-item">
+                <span>Outcome:</span>
+                <span id="outcome"></span>
+            </div>
+            <div class="output-item">
+                <span>Frictionless Rate:</span>
+                <span id="frictionlessRate"></span>
+            </div>
+            <div class="output-item">
+                <span>Challenge Rate:</span>
+                <span id="challengeRate"></span>
+            </div>
+            <div class="output-item">
+                <span>Failure Rate:</span>
+                <span id="failureRate"></span>
+            </div>
+            <div id="exemptionReason" class="exemption-info hidden"></div>
+            <div id="failureReason" class="failure-info hidden"></div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const amountInput = document.getElementById('amount');
+        const cofStatusSelect = document.getElementById('cofStatus');
+        const challengeIndicatorSelect = document.getElementById('challengeIndicator');
+        const piiPresenceCheckbox = document.getElementById('piiPresence');
+        const aiModelToggle = document.getElementById('aiModelToggle');
+        const simulateBtn = document.getElementById('simulateBtn');
+        const outputSection = document.getElementById('outputSection');
+        const outcomeSpan = document.getElementById('outcome');
+        const frictionlessRateSpan = document.getElementById('frictionlessRate');
+        const challengeRateSpan = document.getElementById('challengeRate');
+        const failureRateSpan = document.getElementById('failureRate');
+        const exemptionReasonDiv = document.getElementById('exemptionReason');
+        const failureReasonDiv = document.getElementById('failureReason');
+
+        // Event Listener for Simulate Button
+        simulateBtn.addEventListener('click', simulate3DS);
+
+        /**
+         * Simulates the 3DS flow based on user inputs and internal logic.
+         */
+        function simulate3DS() {
+            // Get input values
+            const amount = parseFloat(amountInput.value);
+            const cofStatus = cofStatusSelect.value;
+            const challengeIndicator = challengeIndicatorSelect.value;
+            const piiPresent = piiPresenceCheckbox.checked;
+            const aiModelEnabled = aiModelToggle.checked;
+
+            // Initialize rates and outcome
+            let frictionlessRate = 0.60; // Base frictionless rate
+            let challengeRate = 0.30;    // Base challenge rate
+            let failureRate = 0.10;      // Base failure rate
+            let outcome = 'Unknown';
+            let exemptionReason = '';
+            let failureReason = '';
+
+            // Reset previous outputs
+            exemptionReasonDiv.classList.add('hidden');
+            failureReasonDiv.classList.add('hidden');
+            exemptionReasonDiv.innerHTML = '';
+            failureReasonDiv.innerHTML = '';
+
+            // --- 3DS Logic and Exemption Evaluation ---
+
+            // 1. Transaction Risk Analysis (TRA) Exemption (Simplified)
+            let traExemptionEligible = false;
+            if (amount <= 50 && cofStatus !== 'none' && piiPresent) {
+                traExemptionEligible = true;
+            } else if (amount <= 30 && cofStatus !== 'none') {
+                traExemptionEligible = true;
+            }
+
+            // 2. Low Value Exemption (LVE)
+            let lveEligible = false;
+            if (amount <= 30) { // Example threshold for LVE
+                lveEligible = true;
+            }
+
+            // 3. Recurring Payments / Merchant Initiated Transactions (MIT) Exemption
+            let recurringExemptionEligible = false;
+            if (cofStatus === 'merchantInitiated' || cofStatus === 'customerInitiated') {
+                recurringExemptionEligible = true;
+            }
+
+            let exemptionApplied = false;
+            if (lveEligible) {
+                exemptionApplied = true;
+                exemptionReason = 'Low Value Exemption (LVE): Transaction amount is below the low value threshold.';
+            } else if (recurringExemptionEligible) {
+                exemptionApplied = true;
+                exemptionReason = 'Recurring Payments/MIT Exemption: Transaction is a Credential on File (CoF) payment.';
+            } else if (traExemptionEligible) {
+                exemptionApplied = true;
+                exemptionReason = 'Transaction Risk Analysis (TRA) Exemption: Low amount, CoF, and PII present indicate lower risk.';
+            }
+
+            // --- ACS Random Challenge Logic ---
+            let acsMandatedChallenge = false;
+            // Only consider random challenge if no exemption was applied and challenge indicator is 'noPreference' or 'noChallenge'
+            if (!exemptionApplied && (challengeIndicator === 'noPreference' || challengeIndicator === 'noChallenge')) {
+                const randomChallengeRoll = Math.random();
+                if (randomChallengeRoll < 0.25) { // 1 in 4 chance (25%)
+                    acsMandatedChallenge = true;
+                }
+            }
+
+            // Determine final outcome based on challenge indicator, exemptions, and ACS random challenge
+            if (challengeIndicator === 'frictionlessMandated') {
+                if (exemptionApplied) {
+                    outcome = 'Frictionless (Exempted)';
+                } else {
+                    outcome = 'Frictionless (No Exemption, ACS decision)';
+                }
+            } else if (challengeIndicator === 'challengeMandated') {
+                outcome = 'Challenge (Mandated)';
+                exemptionApplied = false; // A mandated challenge overrides any exemption logic
+                exemptionReason = ''; // Clear exemption reason if challenge is mandated
+            } else { // 'noPreference' or 'noChallenge'
+                if (exemptionApplied) {
+                    // Explicitly set outcome when an exemption applies
+                    outcome = 'Frictionless (Exempted)';
+                } else if (acsMandatedChallenge) {
+                    // ACS randomly mandated a challenge
+                    outcome = `Challenge (ACS Mandated - ${challengeIndicator === 'noChallenge' ? 'No Challenge Requested' : 'No Preference'})`;
+                } else {
+                    // Default behavior if no exemption and no ACS mandated challenge
+                    if (challengeIndicator === 'noChallenge') {
+                        outcome = 'Frictionless (No Challenge Requested)';
+                    } else { // 'noPreference'
+                        // Simulate a random outcome based on base rates
+                        const random = Math.random();
+                        if (random < frictionlessRate) {
+                            outcome = 'Frictionless';
+                        } else if (random < frictionlessRate + challengeRate) {
+                            outcome = 'Challenge';
+                        } else {
+                            outcome = 'Failure';
+                            failureReason = 'Simulated failure due to high risk or technical issue.';
+                        }
+                    }
+                }
+            }
+
+            // --- AI Model Impact (Simplified) ---
+            if (aiModelEnabled) {
+                // AI model "tunes" parameters to optimize frictionless flow
+                // Example: If frictionless was the outcome, slightly increase its rate.
+                // If it was a challenge, try to push it towards frictionless for similar future transactions.
+                if (outcome.includes('Frictionless')) {
+                    frictionlessRate = Math.min(0.95, frictionlessRate + 0.15); // Increase frictionless
+                    challengeRate = Math.max(0.01, challengeRate - 0.10); // Decrease challenge
+                    failureRate = Math.max(0.01, failureRate - 0.05);     // Decrease failure
+                    if (!exemptionApplied) { // If AI helped achieve frictionless without explicit exemption
+                        exemptionReason = exemptionReason || 'AI Model Optimization: Transaction identified as low risk for frictionless flow.';
+                        exemptionReasonDiv.classList.remove('hidden');
+                    }
+                } else if (outcome.includes('Challenge')) {
+                    // AI tries to reduce future challenges for similar transactions
+                    frictionlessRate = Math.min(0.90, frictionlessRate + 0.05);
+                    challengeRate = Math.max(0.05, challengeRate - 0.05);
+                    exemptionReason = exemptionReason || 'AI Model Optimization: Future transactions of this type may see increased frictionless rates.';
+                    exemptionReasonDiv.classList.remove('hidden');
+                } else if (outcome.includes('Failure')) {
+                     // AI tries to reduce future failures
+                    failureRate = Math.max(0.01, failureRate - 0.05);
+                    exemptionReason = exemptionReason || 'AI Model Optimization: Future transactions of this type may see reduced failure rates.';
+                    exemptionReasonDiv.classList.remove('hidden');
+                }
+            }
+
+            // Ensure rates sum to 100% (with some tolerance for floating point)
+            const totalRate = frictionlessRate + challengeRate + failureRate;
+            if (totalRate > 1.001 || totalRate < 0.999) {
+                // Normalize if they drift significantly
+                const factor = 1 / totalRate;
+                frictionlessRate *= factor;
+                challengeRate *= factor;
+                failureRate *= factor;
+            }
+
+
+            // Display Results
+            outcomeSpan.textContent = outcome;
+            frictionlessRateSpan.textContent = `${(frictionlessRate * 100).toFixed(2)}%`;
+            challengeRateSpan.textContent = `${(challengeRate * 100).toFixed(2)}%`;
+            failureRateSpan.textContent = `${(failureRate * 100).toFixed(2)}%`;
+
+            if (exemptionReason) {
+                exemptionReasonDiv.innerHTML = `<strong>Exemption/Optimization Info:</strong> ${exemptionReason}`;
+                exemptionReasonDiv.classList.remove('hidden');
+            }
+            if (failureReason) {
+                failureReasonDiv.innerHTML = `<strong>Failure Reason:</strong> ${failureReason}`;
+                failureReasonDiv.classList.remove('hidden');
+            }
+
+            outputSection.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
