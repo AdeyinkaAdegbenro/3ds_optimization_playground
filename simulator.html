@@ -228,7 +228,6 @@
                     <option value="noPreference">No Preference</option>
                     <option value="noChallenge">No Challenge Requested</option>
                     <option value="challengeMandated">Challenge Mandated</option>
-                    <option value="frictionlessMandated">Frictionless Mandated</option>
                 </select>
             </div>
             <div class="input-group checkbox-group">
@@ -354,13 +353,7 @@
             }
 
             // Determine final outcome based on challenge indicator, exemptions, and ACS random challenge
-            if (challengeIndicator === 'frictionlessMandated') {
-                if (exemptionApplied) {
-                    outcome = 'Frictionless (Exempted)';
-                } else {
-                    outcome = 'Frictionless (No Exemption, ACS decision)';
-                }
-            } else if (challengeIndicator === 'challengeMandated') {
+            if (challengeIndicator === 'challengeMandated') {
                 outcome = 'Challenge (Mandated)';
                 exemptionApplied = false; // A mandated challenge overrides any exemption logic
                 exemptionReason = ''; // Clear exemption reason if challenge is mandated
@@ -390,10 +383,12 @@
                 }
             }
 
-            // --- AI Model Impact (Simplified) ---
+            // AI Model Impact (Simplified)
             if (aiModelEnabled) {
                 // AI model "tunes" parameters to optimize frictionless flow
                 // These changes now persist because currentFrictionlessRate, etc., are global
+                // Note: this is a simplified representation of the fine-tuning AI does for demo purposes only.
+                // It is however not real AI.
                 if (outcome.includes('Frictionless')) {
                     currentFrictionlessRate = Math.min(0.95, currentFrictionlessRate + 0.05); // Increase frictionless
                     currentChallengeRate = Math.max(0.01, currentChallengeRate - 0.03); // Decrease challenge
